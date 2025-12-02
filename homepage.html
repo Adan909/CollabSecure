@@ -3,32 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido al Homepage</title>
-    <link rel="stylesheet" href="style.css">
+    <title>MiniTrello - Homepage</title>
+    <link rel="stylesheet" href="homepage.css">
 </head>
 <body>
-    <div class="card">
-        <h1>🎉 ¡Bienvenido!</h1>
-        <p>Has iniciado sesión correctamente.</p>
-        <p>Contenido del Homepage.</p>
-        <button id="logoutBtn">Cerrar Sesión</button>
+    <div class="app-shell">
+        <header>
+            <div class="brand">
+                <div class="brand-icon">M</div>
+                <div>
+                    <h1>MiniTrello</h1>
+                    <div class="brand-sub">Tablero ligero para organizar tareas por columnas</div>
+                </div>
+            </div>
+            <div class="controls">
+                <div id="userStatus" class="pill">Sesión activa</div>
+                <button id="logoutBtn" class="logout">
+                    <span>⬅</span> Cerrar sesión
+                </button>
+            </div>
+        </header>
+
+        <main class="board-wrap">
+            <div class="top-row">
+                <div class="top-info">
+                    Escribe una tarea y agrégala. Luego arrástrala entre columnas para cambiar su estado.
+                </div>
+                <form id="addForm" class="add-form" onsubmit="return false;">
+                    <input id="taskInput" placeholder="Nueva tarea... (Enter o botón +)" autocomplete="off">
+                    <button id="addBtn" title="Agregar tarea">+</button>
+                </form>
+            </div>
+
+            <div class="board">
+                <div class="column" data-status="pendiente">
+                    <div class="col-header">
+                        <div class="col-title">
+                            <span class="col-tag pendiente"></span>
+                            Pendiente
+                        </div>
+                        <div class="count" id="count-pendiente">0</div>
+                    </div>
+                    <div class="task-list" id="list-pendiente"></div>
+                </div>
+
+                <div class="column" data-status="enproceso">
+                    <div class="col-header">
+                        <div class="col-title">
+                            <span class="col-tag enproceso"></span>
+                            En proceso
+                        </div>
+                        <div class="count" id="count-enproceso">0</div>
+                    </div>
+                    <div class="task-list" id="list-enproceso"></div>
+                </div>
+
+                <div class="column" data-status="completo">
+                    <div class="col-header">
+                        <div class="col-title">
+                            <span class="col-tag completo"></span>
+                            Completo
+                        </div>
+                        <div class="count" id="count-completo">0</div>
+                    </div>
+                    <div class="task-list" id="list-completo"></div>
+                </div>
+            </div>
+        </main>
+
+        <div class="footer">
+            Arrastra las tarjetas entre columnas. Los cambios se guardan localmente en este navegador.
+        </div>
     </div>
 
     <script>
+        // --- Sesión ---
         const logoutBtn = document.getElementById('logoutBtn');
-
-        // Redirigir al login si no hay sesión activa
         if (!sessionStorage.getItem('loggedIn')) {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
-
         if (logoutBtn) {
             logoutBtn.addEventListener('click', function () {
                 sessionStorage.removeItem('loggedIn');
-                // Redirigir a la página de login
-                window.location.href = 'login.html'; 
+                window.location.href = 'index.html';
             });
         }
+
+        // --- MiniTrello logic ---
+        const STORAGE_KEY = 'minitrello_tasks_v1';
+        let tasks = [];
+
+        const input = document.getElementById('taskInput');
+        const addBtn = document.getElementById('addBtn');
+        const lists = {
+            pendiente: document.getElementById('list-pendiente'),
+            enproceso: document.getElementById('list-enproceso'),
+            completo: document.getElementById('list-completo')
+        };
+        const counters = {
+            pendiente: document.getElementById('count-pendiente'),
+            enproceso: document.getElementById('count-enproceso'),
+            completo: document.getElementById('count-completo')
+        };
+
+        function loadTasks(){
+            try{
+                const raw = localStorage.getItem(STORAGE_KEY);
+                tasks = raw ? JSON.parse(raw) : [];
+            }catch(e){
+                tasks = [];
+            }
+        }
+        function saveTasks(){
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        }
+
+        function createCard(task){
+            const el = document.createElement('div');
+            el.className = 'task';
+            el.draggable = true;
+            el.dataset.id = task.id;
+
+            el.innerHTML = `
+                <div class="title">${escapeHtml(task.title)}</div>
+                <div class="meta">
+                    <button class="edit" title="Editar">✏️</button>
+                    <button class="del" title="Eliminar">🗑️</button>
+                </div>
+            `;
+
+            el.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', task.id);
+                el.classList.add('dragging');
+            });
+            el.addEventListener('dragend', () => {
+                el.classList.remove('dragging');
+            });
+
+            el.querySelector('.edit').addEventListener('click', () => {
+                const newTitle = prompt('Editar tarea', task.title);
+                if (newTitle !== null) {
+                    task.title = newTitle.trim();
+                    if (task.title === '') {
+                        removeTask(task.id);
+                    } else {
+                        saveTasks();
+                        render();
+                    }
+                }
+            });
+
+            el.querySelector('.del').addEventListener('click', () => {
+                if (confirm('¿Eliminar tarea?')) removeTask(task.id);
+            });
+
+            return el;
+        }
+
+        function render(){
+            Object.values(lists).forEach(l => l.innerHTML = '');
+            const grouped = {pendiente:0,enproceso:0,completo:0};
+            tasks.forEach(t => {
+                const status = t.status || 'pendiente';
+                const card = createCard(t);
+                lists[status].appendChild(card);
+                grouped[status]++;
+            });
+            counters.pendiente.textContent = grouped.pendiente;
+            counters.enproceso.textContent = grouped.enproceso;
+            counters.completo.textContent = grouped.completo;
+
+            document.querySelectorAll('.column').forEach(col => {
+                col.addEventListener('dragover', e => e.preventDefault());
+                col.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData('text/plain');
+                    const status = col.dataset.status;
+                    moveTaskTo(id, status);
+                });
+            });
+
+            Object.keys(lists).forEach(k => {
+                if (lists[k].children.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'empty';
+                    empty.textContent = (k === 'pendiente'
+                        ? 'No hay tareas pendientes'
+                        : k === 'enproceso'
+                            ? 'Nada en proceso'
+                            : 'Nada completo');
+                    lists[k].appendChild(empty);
+                }
+            });
+        }
+
+        function addTask(title){
+            const t = title.trim();
+            if (!t) return;
+            const task = {
+                id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+                title: t,
+                status: 'pendiente'
+            };
+            tasks.unshift(task);
+            saveTasks();
+            render();
+            input.value = '';
+            input.focus();
+        }
+
+        function removeTask(id){
+            tasks = tasks.filter(x => x.id !== id);
+            saveTasks();
+            render();
+        }
+
+        function moveTaskTo(id, status){
+            const t = tasks.find(x => x.id === id);
+            if (!t) return;
+            t.status = status;
+            saveTasks();
+            render();
+        }
+
+        function escapeHtml(str){
+            return str
+                .replaceAll('&','&amp;')
+                .replaceAll('<','&lt;')
+                .replaceAll('>','&gt;')
+                .replaceAll('"','&quot;')
+                .replaceAll("'",'&#39;');
+        }
+
+        addBtn.addEventListener('click', () => addTask(input.value));
+        document.getElementById('addForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            addTask(input.value);
+        });
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTask(input.value);
+            }
+        });
+
+        loadTasks();
+        render();
     </script>
 </body>
 </html>
