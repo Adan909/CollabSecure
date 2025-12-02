@@ -1,38 +1,10 @@
 <!doctype html>
-<script>
-(function(){
-    var css = '.muted{display:none !important;} #dashboardCard > *{display:none !important;}';
-    try {
-        if (document.head) {
-            var s = document.createElement('style');
-            s.textContent = css;
-            document.head.appendChild(s);
-        } else {
-            document.write('<style>' + css + '</style>');
-        }
-    } catch (e) {
-        document.write('<style>' + css + '</style>');
-    }
-})();
-</script>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Login simple</title>
-    <style>
-        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f7fb}
-        .card{background:#fff;padding:24px;border-radius:8px;box-shadow:0 6px 18px rgba(20,30,50,0.08);width:320px}
-        h1{font-size:18px;margin:0 0 12px}
-        label{display:block;font-size:13px;margin:8px 0 4px}
-        input{width:100%;padding:8px 10px;border:1px solid #d7dbe6;border-radius:6px;box-sizing:border-box}
-        .btn{margin-top:12px;width:100%;padding:10px;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
-        .muted{font-size:12px;color:#7b869a;margin-top:8px;text-align:center}
-        .error{color:#c53030;font-size:13px;margin-top:10px}
-        .hidden{display:none}
-        .center{text-align:center}
-        .logout{background:#e2e8f0;color:#0f1724}
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="card" id="loginCard">
