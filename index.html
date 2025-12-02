@@ -16,70 +16,18 @@
             <input id="pass" name="pass" type="password" required />
             <button class="btn" type="submit">Entrar</button>
             <div id="error" class="error" role="status" aria-live="polite"></div>
-            <div class="muted">Cuenta: <strong>admin</strong> — Contraseña: <strong>duran123</strong></div>
+            <div class="muted">Cuentas de ejemplo: <strong>admin</strong>/<strong>duran123</strong> · <strong>Ortega</strong>/<strong>ortega123</strong></div>
         </form>
     </div>
 
     <div class="card hidden" id="dashboardCard" aria-live="polite">
         <h1>Panel de administrador</h1>
-        <p>Has iniciado sesión correctamente como <strong>admin</strong>.</p>
+            <p>Has iniciado sesión correctamente como <strong id="currentUser">admin</strong>.</p>
         <div class="center">
             <button id="logoutBtn" class="btn logout">Cerrar sesión</button>
         </div>
     </div>
 
-    <script>
-        // Credenciales (tal como solicitaste)
-        const ADMIN_USER = 'admin';
-        const ADMIN_PASS = 'duran123';
-
-        const loginCard = document.getElementById('loginCard');
-        const dashboardCard = document.getElementById('dashboardCard');
-        const form = document.getElementById('loginForm');
-        const userInput = document.getElementById('user');
-        const passInput = document.getElementById('pass');
-        const errorEl = document.getElementById('error');
-        const logoutBtn = document.getElementById('logoutBtn');
-
-        function showDashboard() {
-            loginCard.classList.add('hidden');
-            dashboardCard.classList.remove('hidden');
-            errorEl.textContent = '';
-        }
-
-        function showLogin() {
-            dashboardCard.classList.add('hidden');
-            loginCard.classList.remove('hidden');
-            passInput.value = '';
-            userInput.focus();
-        }
-
-        // Mantener sesión en la sesión del navegador
-        if (sessionStorage.getItem('loggedIn') === 'true') {
-            showDashboard();
-        } else {
-            showLogin();
-        }
-
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const user = userInput.value.trim();
-            const pass = passInput.value;
-            if (user === ADMIN_USER && pass === ADMIN_PASS) {
-                sessionStorage.setItem('loggedIn', 'true');
-                showDashboard();
-            } else {
-                errorEl.textContent = 'Usuario o contraseña incorrectos.';
-                // ligero feedback visual
-                passInput.value = '';
-                passInput.focus();
-            }
-        });
-
-        logoutBtn.addEventListener('click', function () {
-            sessionStorage.removeItem('loggedIn');
-            showLogin();
-        });
-    </script>
+  
 </body>
 </html>

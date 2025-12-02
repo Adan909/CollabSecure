@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Homepage - CollabSecure</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="board-wrap">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0 16px">
+            <div>
+                <h1 style="margin:0">Mi Tablero</h1>
+                <div class="muted">Pequeño tablero estilo Trello</div>
+            </div>
+            <div class="center"><button id="logoutBtnTop" class="btn logout">Cerrar sesión</button></div>
+        </div>
+
+        <div class="board" id="board">
+            <div class="list" data-list="todo">
+                <div class="list-header">
+                    <span>Por hacer</span>
+                    <span class="list-count" id="count-todo">2</span>
+                </div>
+                <div class="cards" id="todo">
+                    <div class="card-item" draggable="true" data-id="c1">
+                        <div class="card-title">Revisar logs de seguridad</div>
+                        <div class="card-meta">Prioridad alta</div>
+                    </div>
+                    <div class="card-item" draggable="true" data-id="c2">
+                        <div class="card-title">Actualizar permisos de usuario</div>
+                        <div class="card-meta">Admin</div>
+                    </div>
+                </div>
+                <button class="add-card" data-list="todo">+ Añadir tarjeta</button>
+            </div>
+
+            <div class="list" data-list="inprogress">
+                <div class="list-header">
+                    <span>En progreso</span>
+                    <span class="list-count" id="count-inprogress">1</span>
+                </div>
+                <div class="cards" id="inprogress">
+                    <div class="card-item" draggable="true" data-id="c3">
+                        <div class="card-title">Integrar nuevo SSO</div>
+                        <div class="card-meta">En equipo</div>
+                    </div>
+                </div>
+                <button class="add-card" data-list="inprogress">+ Añadir tarjeta</button>
+            </div>
+
+            <div class="list" data-list="done">
+                <div class="list-header">
+                    <span>Hecho</span>
+                    <span class="list-count" id="count-done">0</span>
+                </div>
+                <div class="cards" id="done">
+                </div>
+                <button class="add-card" data-list="done">+ Añadir tarjeta</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // comprobar autenticación
+        const user = sessionStorage.getItem('loggedIn');
+        if (!user) {
+            window.location.href = 'index.html';
+        }
+
+        // logout buttons
+        document.getElementById('logoutBtnTop').addEventListener('click', function () {
+            sessionStorage.removeItem('loggedIn');
+            window.location.href = 'index.html';
+        });
+
+        // Drag & Drop básico
+        let dragged = null;
+
+        document.querySelectorAll('.card-item').forEach(card => {
+            card.addEventListener('dragstart', function (e) {
+                dragged = this;
+                e.dataTransfer.effectAllowed = 'move';
+                this.style.opacity = '0.6';
+            });
+            card.addEventListener('dragend', function () { this.style.opacity = ''; dragged = null; updateCounts(); });
+        });
+
+        document.querySelectorAll('.cards').forEach(zone => {
+            zone.addEventListener('dragover', function (e) { e.preventDefault(); this.closest('.list').classList.add('drag-over'); });
+            zone.addEventListener('dragleave', function () { this.closest('.list').classList.remove('drag-over'); });
+            zone.addEventListener('drop', function (e) {
+                e.preventDefault(); this.closest('.list').classList.remove('drag-over');
+                if (dragged) this.appendChild(dragged);
+                updateCounts();
+            });
+        });
+
+        // Añadir tarjeta simple (prompt)
+        document.querySelectorAll('.add-card').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const listId = this.getAttribute('data-list');
+                const title = prompt('Título de la tarjeta:');
+                if (title && title.trim()) {
+                    const card = document.createElement('div');
+                    card.className = 'card-item';
+                    card.setAttribute('draggable', 'true');
+                    card.innerHTML = `<div class="card-title">${escapeHtml(title)}</div>`;
+                    document.getElementById(listId).appendChild(card);
+                    // bind drag handlers to new card
+                    card.addEventListener('dragstart', function (e) { dragged = this; e.dataTransfer.effectAllowed = 'move'; this.style.opacity = '0.6'; });
+                    card.addEventListener('dragend', function () { this.style.opacity = ''; dragged = null; updateCounts(); });
+                    updateCounts();
+                }
+            });
+        });
+
+        function updateCounts() {
+            ['todo','inprogress','done'].forEach(id => {
+                const el = document.getElementById(id);
+                const countEl = document.getElementById('count-' + id);
+                if (el && countEl) countEl.textContent = el.children.length;
+            });
+        }
+
+        function escapeHtml(unsafe){
+            return unsafe.replace(/[&<>"'`]/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;', '`':'&#96;'}[m]});
+        }
+
+        // inicializar contadores
+        updateCounts();
+    </script>
+</body>
+</html>
