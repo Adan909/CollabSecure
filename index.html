@@ -1,11 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<script>
+(function(){
+    var css = '.muted{display:none !important;} #dashboardCard > *{display:none !important;}';
+    try {
+        if (document.head) {
+            var s = document.createElement('style');
+            s.textContent = css;
+            document.head.appendChild(s);
+        } else {
+            document.write('<style>' + css + '</style>');
+        }
+    } catch (e) {
+        document.write('<style>' + css + '</style>');
+    }
+})();
+</script>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Login simple</title>
+    <style>
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f7fb}
+        .card{background:#fff;padding:24px;border-radius:8px;box-shadow:0 6px 18px rgba(20,30,50,0.08);width:320px}
+        h1{font-size:18px;margin:0 0 12px}
+        label{display:block;font-size:13px;margin:8px 0 4px}
+        input{width:100%;padding:8px 10px;border:1px solid #d7dbe6;border-radius:6px;box-sizing:border-box}
+        .btn{margin-top:12px;width:100%;padding:10px;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
+        .muted{font-size:12px;color:#7b869a;margin-top:8px;text-align:center}
+        .error{color:#c53030;font-size:13px;margin-top:10px}
+        .hidden{display:none}
+        .center{text-align:center}
+        .logout{background:#e2e8f0;color:#0f1724}
+    </style>
 </head>
 <body>
-    
+    <div class="card" id="loginCard">
+        <h1>Iniciar sesión</h1>
+        <form id="loginForm" autocomplete="off">
+            <label for="user">Usuario</label>
+            <input id="user" name="user" type="text" required autofocus />
+            <label for="pass">Contraseña</label>
+            <input id="pass" name="pass" type="password" required />
+            <button class="btn" type="submit">Entrar</button>
+            <div id="error" class="error" role="status" aria-live="polite"></div>
+            <div class="muted">Cuenta: <strong>admin</strong> — Contraseña: <strong>duran123</strong></div>
+        </form>
+    </div>
+
+    <div class="card hidden" id="dashboardCard" aria-live="polite">
+        <h1>Panel de administrador</h1>
+        <p>Has iniciado sesión correctamente como <strong>admin</strong>.</p>
+        <div class="center">
+            <button id="logoutBtn" class="btn logout">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <script>
+        // Credenciales (tal como solicitaste)
+        const ADMIN_USER = 'admin';
+        const ADMIN_PASS = 'duran123';
+
+        const loginCard = document.getElementById('loginCard');
+        const dashboardCard = document.getElementById('dashboardCard');
+        const form = document.getElementById('loginForm');
+        const userInput = document.getElementById('user');
+        const passInput = document.getElementById('pass');
+        const errorEl = document.getElementById('error');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        function showDashboard() {
+            loginCard.classList.add('hidden');
+            dashboardCard.classList.remove('hidden');
+            errorEl.textContent = '';
+        }
+
+        function showLogin() {
+            dashboardCard.classList.add('hidden');
+            loginCard.classList.remove('hidden');
+            passInput.value = '';
+            userInput.focus();
+        }
+
+        // Mantener sesión en la sesión del navegador
+        if (sessionStorage.getItem('loggedIn') === 'true') {
+            showDashboard();
+        } else {
+            showLogin();
+        }
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const user = userInput.value.trim();
+            const pass = passInput.value;
+            if (user === ADMIN_USER && pass === ADMIN_PASS) {
+                sessionStorage.setItem('loggedIn', 'true');
+                showDashboard();
+            } else {
+                errorEl.textContent = 'Usuario o contraseña incorrectos.';
+                // ligero feedback visual
+                passInput.value = '';
+                passInput.focus();
+            }
+        });
+
+        logoutBtn.addEventListener('click', function () {
+            sessionStorage.removeItem('loggedIn');
+            showLogin();
+        });
+    </script>
 </body>
 </html>
