@@ -1,33 +1,84 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Login simple</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CollabSecure - Login</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="card" id="loginCard">
-        <h1>Iniciar sesión</h1>
-        <form id="loginForm" autocomplete="off">
-            <label for="user">Usuario</label>
-            <input id="user" name="user" type="text" required autofocus />
-            <label for="pass">Contraseña</label>
-            <input id="pass" name="pass" type="password" required />
-            <button class="btn" type="submit">Entrar</button>
-            <div id="error" class="error" role="status" aria-live="polite"></div>
-            <div class="muted">Cuentas de ejemplo: <strong>admin</strong>/<strong>duran123</strong> · <strong>Ortega</strong>/<strong>ortega123</strong></div>
+
+    <div id="loginCard" class="card">
+        <h2>🔒 Panel de Administración</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="user">Usuario</label>
+                <input type="text" id="user" required>
+            </div>
+            <div class="input-group">
+                <label for="pass">Contraseña</label>
+                <input type="password" id="pass" required>
+            </div>
+            <p id="error" class="error-message"></p>
+            <button type="submit">Iniciar Sesión (Login)</button>
         </form>
     </div>
 
-    <div class="card hidden" id="dashboardCard" aria-live="polite">
-        <h1>Panel de administrador</h1>
-            <p>Has iniciado sesión correctamente como <strong id="currentUser">admin</strong>.</p>
-        <div class="center">
-            <button id="logoutBtn" class="btn logout">Cerrar sesión</button>
-        </div>
-    </div>
+    <script>
+        // PEGA AQUÍ TU SCRIPT JAVASCRIPT MODIFICADO
+        // Asegúrate de que este bloque esté al final del body
+        // para que todos los elementos HTML se carguen primero.
+        
+        // Usuarios permitidos
+        const USERS = {
+            admin: 'duran123',
+            ortega: 'ortega123' 
+        };
 
-  
+        // Variables de elementos (deben coincidir con los IDs del HTML)
+        const loginCard = document.getElementById('loginCard');
+        const form = document.getElementById('loginForm');
+        const userInput = document.getElementById('user');
+        const passInput = document.getElementById('pass');
+        const errorEl = document.getElementById('error');
+
+        // Función para mostrar el login (necesaria para la lógica de sesión)
+        function showLogin() {
+             // Simplemente nos aseguramos de que los campos estén limpios al inicio
+             passInput.value = '';
+             userInput.focus();
+        }
+
+        // Lógica de Mantenimiento de Sesión y Redirección Inicial
+        const savedUser = sessionStorage.getItem('loggedIn');
+        if (savedUser) {
+            // Si hay un usuario guardado, redirigimos inmediatamente al homepage
+            window.location.href = 'homepage.html';
+        } else {
+            // Si no hay sesión, mostramos el formulario de login (limpiamos campos)
+            showLogin();
+        }
+
+        // Lógica de Envío del Formulario
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const user = userInput.value.trim();
+            const pass = passInput.value;
+
+            // 1. Validación de Credenciales
+            if (USERS[user] && USERS[user] === pass) {
+                // 2. Login Exitoso: Redirección al homepage
+                sessionStorage.setItem('loggedIn', user);
+                window.location.href = 'homepage.html'; // Redirección al homepage
+                return;
+            } else {
+                // 3. Login Denegado: Mensaje de error
+                errorEl.textContent = 'Usuario o contraseña incorrectos.';
+                passInput.value = '';
+                passInput.focus();
+            }
+        });
+        
+    </script>
 </body>
 </html>
