@@ -1,9 +1,33 @@
-// Usuarios permitidos
-const USERS = {
-    // Usuario: Contraseña
+// Configuración de demo de autenticación (usuarios y política)
+const PLAIN_USERS = {
     admin: 'duran123',
-    ortega: 'ortega123' // Corregido a minúsculas para coincidir con la solicitud
+    ortega: 'ortega123'
 };
+const RATE_LIMIT = { maxAttempts: 5, windowMs: 60 * 1000, lockoutMs: 5 * 60 * 1000 };
+let attempts = [];
+let lockoutUntil = 0;
+
+// Utilidades de seguridad
+function now(){ return Date.now(); }
+function sanitizeUsername(u){
+    return (u || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+}
+async function sha256Hex(str){
+    const enc = new TextEncoder();
+    const data = enc.encode(str);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    const bytes = new Uint8Array(digest);
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function getHashedUsers(){
+    const entries = Object.entries(PLAIN_USERS);
+    const out = {};
+    for(const [user, pass] of entries){
+        // Simple "cifrado" (hash). En un backend real usaríamos salt + PBKDF.
+        out[user] = await sha256Hex(pass);
+    }
+    return out;
+}
 
 const appTitle = 'CollabSecure - Panel de Administración';
 
@@ -36,27 +60,56 @@ function showLogin() {
 // Lógica de Mantenimiento de Sesión y Redirección Inicial
 const savedUser = sessionStorage.getItem('loggedIn');
 if (savedUser) {
-    // Si hay un usuario guardado, redirigimos inmediatamente al homepage
     window.location.href = 'homepage.html';
 } else {
-    // Si no hay sesión, mostramos el formulario de login
     showLogin();
 }
 
 // Lógica de Envío del Formulario
-form.addEventListener('submit', function (e) {
+form.addEventListener('submit', async function (e) {
     e.preventDefault();
-    const user = userInput.value.trim();
-    const pass = passInput.value;
 
-    // **1. Validación de Credenciales**
-    if (USERS[user] && USERS[user] === pass) {
-        // **2. Login Exitoso: Redirección al homepage**
+    // Rate limit y bloqueo
+    const t = now();
+    if (lockoutUntil && t < lockoutUntil){
+        const mins = Math.ceil((lockoutUntil - t)/60000);
+        errorEl.textContent = `Demasiados intentos. Intenta de nuevo en ~${mins} min.`;
+        return;
+    }
+    attempts = attempts.filter(a => t - a < RATE_LIMIT.windowMs);
+    attempts.push(t);
+    if (attempts.length > RATE_LIMIT.maxAttempts){
+        lockoutUntil = t + RATE_LIMIT.lockoutMs;
+        errorEl.textContent = 'Demasiados intentos. Usuario bloqueado temporalmente.';
+        return;
+    }
+
+    // Validación de entrada
+    const rawUser = userInput.value;
+    const user = sanitizeUsername(rawUser);
+    const pass = (passInput.value || '').trim();
+    if (user.length < 3 || user.length > 32){
+        errorEl.textContent = 'Usuario inválido (3-32, alfanumérico . _ -).';
+        userInput.focus();
+        return;
+    }
+    if (pass.length < 6 || pass.length > 64){
+        errorEl.textContent = 'Contraseña inválida (6-64 caracteres).';
+        passInput.focus();
+        return;
+    }
+
+    // Cifrado simple (hash) y autenticación
+    const USERS_HASHED = await getHashedUsers();
+    const passHash = await sha256Hex(pass);
+    if (USERS_HASHED[user] && USERS_HASHED[user] === passHash) {
         sessionStorage.setItem('loggedIn', user);
-        window.location.href = 'homepage.html'; // Redirección al homepage
+        // Generar un token de sesión simple
+        const token = await sha256Hex(user + ':' + t);
+        sessionStorage.setItem('sessionToken', token);
+        window.location.href = 'homepage.html';
         return;
     } else {
-        // **3. Login Denegado: Mensaje de error**
         errorEl.textContent = 'Usuario o contraseña incorrectos.';
         passInput.value = '';
         passInput.focus();

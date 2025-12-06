@@ -76,6 +76,42 @@
         </div>
     </div>
 
+    <!-- Modal para agregar tarea avanzada -->
+    <div id="taskModal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Agregar tarea">
+        <div class="modal-content">
+            <h3>Nueva tarea</h3>
+            <form id="taskForm">
+                <label>
+                    Nombre de la tarea
+                    <input id="m_title" type="text" required maxlength="100" placeholder="Ej: Preparar informe">
+                </label>
+                <div class="row">
+                    <label>
+                        Fecha mínima
+                        <input id="m_start" type="date">
+                    </label>
+                    <label>
+                        Fecha máxima
+                        <input id="m_end" type="date">
+                    </label>
+                </div>
+                <label>
+                    Asignado a
+                    <input id="m_assignee" type="text" maxlength="50" placeholder="Ej: Ana Pérez">
+                </label>
+                <label>
+                    Comentarios
+                    <textarea id="m_comments" rows="3" maxlength="300" placeholder="Notas, detalles, requisitos..."></textarea>
+                </label>
+                <p id="m_error" class="error"></p>
+                <div class="actions">
+                    <button type="button" id="m_cancel">Cancelar</button>
+                    <button type="submit" id="m_save">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // --- Sesión ---
         const logoutBtn = document.getElementById('logoutBtn');
@@ -126,7 +162,12 @@
 
             el.innerHTML = `
                 <div class="title">${escapeHtml(task.title)}</div>
+                <div class="submeta">
+                    ${task.assignee ? `<span class="chip">👤 ${escapeHtml(task.assignee)}</span>` : ''}
+                    ${(task.startDate || task.endDate) ? `<span class="chip">📅 ${escapeHtml(task.startDate || '')}${task.endDate ? ' → ' + escapeHtml(task.endDate) : ''}</span>` : ''}
+                </div>
                 <div class="meta">
+                    <button class="view" title="Ver comentarios">💬</button>
                     <button class="edit" title="Editar">✏️</button>
                     <button class="del" title="Eliminar">🗑️</button>
                 </div>
@@ -140,17 +181,13 @@
                 el.classList.remove('dragging');
             });
 
+            el.querySelector('.view').addEventListener('click', () => {
+                const comments = task.comments || '';
+                alert(comments ? comments : 'Sin comentarios.');
+            });
+
             el.querySelector('.edit').addEventListener('click', () => {
-                const newTitle = prompt('Editar tarea', task.title);
-                if (newTitle !== null) {
-                    task.title = newTitle.trim();
-                    if (task.title === '') {
-                        removeTask(task.id);
-                    } else {
-                        saveTasks();
-                        render();
-                    }
-                }
+                openModal(task);
             });
 
             el.querySelector('.del').addEventListener('click', () => {
@@ -174,9 +211,11 @@
             counters.completo.textContent = grouped.completo;
 
             document.querySelectorAll('.column').forEach(col => {
-                col.addEventListener('dragover', e => e.preventDefault());
+                col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('dragover'); });
+                col.addEventListener('dragleave', () => { col.classList.remove('dragover'); });
                 col.addEventListener('drop', e => {
                     e.preventDefault();
+                    col.classList.remove('dragover');
                     const id = e.dataTransfer.getData('text/plain');
                     const status = col.dataset.status;
                     moveTaskTo(id, status);
@@ -197,19 +236,20 @@
             });
         }
 
-        function addTask(title){
-            const t = title.trim();
-            if (!t) return;
+        function addTaskFromModal(data){
+            const id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
             const task = {
-                id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-                title: t,
-                status: 'pendiente'
+                id,
+                title: data.title,
+                status: 'pendiente',
+                startDate: data.startDate || '',
+                endDate: data.endDate || '',
+                assignee: data.assignee || '',
+                comments: data.comments || ''
             };
             tasks.unshift(task);
             saveTasks();
             render();
-            input.value = '';
-            input.focus();
         }
 
         function removeTask(id){
@@ -235,16 +275,97 @@
                 .replaceAll("'",'&#39;');
         }
 
-        addBtn.addEventListener('click', () => addTask(input.value));
+        // Modal logic
+        const modal = document.getElementById('taskModal');
+        const taskForm = document.getElementById('taskForm');
+        const mTitle = document.getElementById('m_title');
+        const mStart = document.getElementById('m_start');
+        const mEnd = document.getElementById('m_end');
+        const mAssignee = document.getElementById('m_assignee');
+        const mComments = document.getElementById('m_comments');
+        const mError = document.getElementById('m_error');
+        const mCancel = document.getElementById('m_cancel');
+
+        function openModal(existing){
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+            mError.textContent = '';
+            if (existing){
+                mTitle.value = existing.title || '';
+                mStart.value = existing.startDate || '';
+                mEnd.value = existing.endDate || '';
+                mAssignee.value = existing.assignee || '';
+                mComments.value = existing.comments || '';
+                taskForm.dataset.editId = existing.id;
+            } else {
+                mTitle.value = input.value.trim();
+                mStart.value = '';
+                mEnd.value = '';
+                mAssignee.value = '';
+                mComments.value = '';
+                delete taskForm.dataset.editId;
+            }
+            mTitle.focus();
+        }
+        function closeModal(){
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        addBtn.addEventListener('click', () => openModal());
         document.getElementById('addForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            addTask(input.value);
+            openModal();
         });
         input.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                addTask(input.value);
+                openModal();
             }
+        });
+
+        mCancel.addEventListener('click', () => closeModal());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Simple validation
+            const title = mTitle.value.trim();
+            const startDate = mStart.value || '';
+            const endDate = mEnd.value || '';
+            const assignee = mAssignee.value.trim();
+            const comments = mComments.value.trim();
+            if (!title){
+                mError.textContent = 'El nombre de la tarea es obligatorio.';
+                mTitle.focus();
+                return;
+            }
+            if (startDate && endDate && startDate > endDate){
+                mError.textContent = 'La fecha mínima no puede ser mayor que la máxima.';
+                mStart.focus();
+                return;
+            }
+
+            const editId = taskForm.dataset.editId;
+            if (editId){
+                const t = tasks.find(x => x.id === editId);
+                if (t){
+                    t.title = title;
+                    t.startDate = startDate;
+                    t.endDate = endDate;
+                    t.assignee = assignee;
+                    t.comments = comments;
+                    saveTasks();
+                    render();
+                }
+            } else {
+                addTaskFromModal({ title, startDate, endDate, assignee, comments });
+            }
+            closeModal();
+            input.value = '';
+            input.focus();
         });
 
         loadTasks();

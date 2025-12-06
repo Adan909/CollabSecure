@@ -8,77 +8,27 @@
 </head>
 <body>
 
-    <div id="loginCard" class="card">
+    <div id="loginCard" class="card" aria-live="polite">
         <h2>🔒 Panel de Administración</h2>
-        <form id="loginForm">
+        <form id="loginForm" novalidate>
             <div class="input-group">
                 <label for="user">Usuario</label>
-                <input type="text" id="user" required>
+                <input type="text" id="user" name="user" minlength="3" maxlength="32" autocomplete="username" required>
             </div>
             <div class="input-group">
                 <label for="pass">Contraseña</label>
-                <input type="password" id="pass" required>
+                <input type="password" id="pass" name="pass" minlength="6" maxlength="64" autocomplete="current-password" required>
             </div>
-            <p id="error" class="error-message"></p>
-            <button type="submit">Iniciar Sesión (Login)</button>
+            <p id="error" class="error-message" role="alert"></p>
+            <button type="submit">Iniciar Sesión</button>
+            <div class="privacy-note">
+                <small>
+                    Privacidad: Las credenciales se validan localmente en este demo. No se envían a servidores. Se aplica cifrado simple (hash) antes de comparar.
+                </small>
+            </div>
         </form>
     </div>
 
-    <script>
-        // PEGA AQUÍ TU SCRIPT JAVASCRIPT MODIFICADO
-        // Asegúrate de que este bloque esté al final del body
-        // para que todos los elementos HTML se carguen primero.
-        
-        // Usuarios permitidos
-        const USERS = {
-            admin: 'duran123',
-            ortega: 'ortega123' 
-        };
-
-        // Variables de elementos (deben coincidir con los IDs del HTML)
-        const loginCard = document.getElementById('loginCard');
-        const form = document.getElementById('loginForm');
-        const userInput = document.getElementById('user');
-        const passInput = document.getElementById('pass');
-        const errorEl = document.getElementById('error');
-
-        // Función para mostrar el login (necesaria para la lógica de sesión)
-        function showLogin() {
-             // Simplemente nos aseguramos de que los campos estén limpios al inicio
-             passInput.value = '';
-             userInput.focus();
-        }
-
-        // Lógica de Mantenimiento de Sesión y Redirección Inicial
-        const savedUser = sessionStorage.getItem('loggedIn');
-        if (savedUser) {
-            // Si hay un usuario guardado, redirigimos inmediatamente al homepage
-            window.location.href = 'homepage.html';
-        } else {
-            // Si no hay sesión, mostramos el formulario de login (limpiamos campos)
-            showLogin();
-        }
-
-        // Lógica de Envío del Formulario
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const user = userInput.value.trim();
-            const pass = passInput.value;
-
-            // 1. Validación de Credenciales
-            if (USERS[user] && USERS[user] === pass) {
-                // 2. Login Exitoso: Redirección al homepage
-                sessionStorage.setItem('loggedIn', user);
-                window.location.href = 'homepage.html'; // Redirección al homepage
-                return;
-            } else {
-                // 3. Login Denegado: Mensaje de error
-                errorEl.textContent = 'Usuario o contraseña incorrectos.';
-                passInput.value = '';
-                passInput.focus();
-            }
-        });
-        
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
