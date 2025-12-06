@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniTrello - Homepage</title>
+    <link rel="stylesheet" href="homepage.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header>
+            <div class="brand">
+                <div class="brand-icon">C</div>
+                <div>
+                    <h1>CollabSecure</h1>
+                    <div class="brand-sub">Tablero ligero para organizar tareas por columnas</div>
+                </div>
+            </div>
+            <div class="controls">
+                <div id="userStatus" class="pill">Sesión activa</div>
+                <button id="logoutBtn" class="logout">
+                    <span>⬅</span> Cerrar sesión
+                </button>
+                <button id="resetBtn" class="reset" title="Reiniciar datos">Reiniciar datos</button>
+            </div>
+        </header>
+
+        <main class="board-wrap">
+            <div class="top-row">
+                <div class="top-info">
+                    Escribe una tarea y agrégala. Luego arrástrala  con el handdle ( ☰ ) entre columnas para cambiar su estado.
+                </div>
+                <form id="addForm" class="add-form" onsubmit="return false;">
+                    <input id="taskInput" placeholder="Nueva tarea... (Enter o botón +)" autocomplete="off">
+                    <button id="addBtn" title="Agregar tarea">+</button>
+                </form>
+                <button id="addColumnBtn" class="add-col" title="Agregar columna">Agregar columna</button>
+            </div>
+            <div class="board" id="board"></div>
+        </main>
+
+        <div class="footer">
+            Arrastra las tarjetas  con el handle ( ☰ ) entre columnas. Los cambios se guardan localmente en este navegador.
+        </div>
+    </div>
+
+    <!-- Mensaje en pantalla (toast) -->
+    <div id="toast" class="toast warning" role="alert" aria-live="assertive"></div>
+
+    <!-- Modal para agregar tarea avanzada -->
+    <div id="taskModal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Agregar tarea">
+        <div class="modal-content">
+            <h3>Nueva tarea</h3>
+            <form id="taskForm">
+                <label>
+                    Nombre de la tarea
+                    <input id="m_title" type="text" required maxlength="100" placeholder="Ej: Preparar informe">
+                </label>
+                <label>
+                    Guardar en columna
+                    <select id="m_status"></select>
+                </label>
+                <div class="row">
+                    <label>
+                        Fecha mínima
+                        <input id="m_start" type="date">
+                    </label>
+                    <label>
+                        Fecha máxima
+                        <input id="m_end" type="date">
+                    </label>
+                </div>
+                <label>
+                    Asignado a
+                    <input id="m_assignee" type="text" maxlength="50" placeholder="Ej: Ana Pérez">
+                </label>
+                <label>
+                    Comentarios
+                    <textarea id="m_comments" rows="3" maxlength="300" placeholder="Notas, detalles, requisitos..."></textarea>
+                </label>
+                <p id="m_error" class="error"></p>
+                <div class="actions">
+                    <button type="button" id="m_cancel">Cancelar</button>
+                    <button type="submit" id="m_save">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar columna -->
+    <div id="colModal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Agregar columna">
+        <div class="modal-content">
+            <h3>Nueva columna</h3>
+            <form id="colForm">
+                <label>
+                    Nombre de la columna
+                    <input id="c_name" type="text" required maxlength="40" placeholder="Ej: Bloqueado">
+                </label>
+                <p id="c_error" class="error"></p>
+                <div class="actions">
+                    <button type="button" id="c_cancel">Cancelar</button>
+                    <button type="submit" id="c_save">Agregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para renombrar columna -->
+    <div id="colRenameModal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Renombrar columna">
+        <div class="modal-content">
+            <h3>Renombrar columna</h3>
+            <form id="colRenameForm">
+                <label>
+                    Nuevo nombre
+                    <input id="cr_name" type="text" required maxlength="40" placeholder="Ej: En espera">
+                </label>
+                <p id="cr_error" class="error"></p>
+                <div class="actions">
+                    <button type="button" id="cr_cancel">Cancelar</button>
+                    <button type="submit" id="cr_save">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para eliminar columna (confirmación) -->
+    <div id="colDeleteModal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Eliminar columna">
+        <div class="modal-content">
+            <h3>Eliminar columna</h3>
+            <div style="font-size:13px; color:var(--muted); margin-bottom:10px">
+                ¿Seguro que deseas eliminar esta columna? Las tareas se moverán a la primera columna.
+            </div>
+            <div class="actions">
+                <button type="button" id="cd_cancel">Cancelar</button>
+                <button type="button" id="cd_confirm">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para eliminar tarea (confirmación) -->
+    <div id="taskDeleteModal" class="modal hidden" aria-hidden="true" role="dialog" aria-label="Eliminar tarea">
+        <div class="modal-content">
+            <h3>Eliminar tarea</h3>
+            <div id="td_message" style="font-size:13px; color:var(--muted); margin-bottom:10px">
+                ¿Seguro que deseas eliminar esta tarea?
+            </div>
+            <div class="actions">
+                <button type="button" id="td_cancel">Cancelar</button>
+                <button type="button" id="td_confirm">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="jsHomepage.js"></script>
+</body>
+</html>
