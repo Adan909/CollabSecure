@@ -1,0 +1,3 @@
+[submodule "CollabSecure"]
+	path = CollabSecure
+	url = https://github.com/Adan909/CollabSecure.git
