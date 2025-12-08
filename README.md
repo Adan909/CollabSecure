@@ -92,3 +92,6 @@ Si deseas evitar restricciones de CORS o probar rutas, puedes usar un servidor s
 ## Licencia
 
 No se declara una licencia en este repositorio. Si corresponde, agregar una en el futuro.
+
+## Link
+https://adan909.github.io/CollabSecure/ 
