@@ -386,6 +386,40 @@
                 .replaceAll("'",'&#39;');
         }
 
+        // ---- Profanity Filter (ES) ----
+        function normalizeText(s){
+            return (s || '')
+                .toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quitar acentos
+                .replace(/[@]/g,'a')
+                .replace(/[\$]/g,'s')
+                .replace(/[0]/g,'o')
+                .replace(/[1\|]/g,'i')
+                .replace(/[3]/g,'e')
+                .replace(/[4]/g,'a')
+                .replace(/[5]/g,'s')
+                .replace(/[7]/g,'t')
+                .replace(/[^a-z0-9\s]/g,' ');
+        }
+        function escapeRegex(s){
+            return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        const BAD_WORDS_RAW = [
+            'mierda','carajo','pendejo','pendeja','gilipollas','coño','joder','cabron','cabrón',
+            'chingar','chingada','culero','culera','imbecil','imbécil','estupido','estúpido',
+            'puta','puto','zorra','perra','verga','pinga','hijo de puta'
+        ];
+        const BAD_WORDS = BAD_WORDS_RAW.map(normalizeText);
+        function findBadWord(text){
+            const norm = normalizeText(text);
+            // palabras completas
+            for (const w of BAD_WORDS){
+                const re = new RegExp(`\\b${escapeRegex(w)}\\b`, 'i');
+                if (re.test(norm)) return w;
+            }
+            return null;
+        }
+
         // Toast message helper
         const toastEl = document.getElementById('toast');
         let toastTimer = null;
@@ -447,7 +481,14 @@
                 if (!currentCommentTaskId) return;
                 const t = tasks.find(x => x.id === currentCommentTaskId);
                 if (!t) return;
-                t.comments = (commentTextarea.value || '').trim();
+                const newComments = (commentTextarea.value || '').trim();
+                const bad = findBadWord(newComments);
+                if (bad){
+                    showToast(`No se permiten malas palabras en comentarios: "${bad}"`, 'warning', 4000);
+                    commentTextarea.focus();
+                    return;
+                }
+                t.comments = newComments;
                 saveTasks();
                 showToast('Comentarios actualizados');
                 closeCommentModal();
@@ -816,6 +857,29 @@
                 mError.textContent = 'El nombre de la tarea es obligatorio.';
                 mTitle.focus();
                 return;
+            }
+            // Profanity checks
+            let bad = findBadWord(title);
+            if (bad){
+                mError.textContent = `El título contiene palabras no permitidas: "${bad}".`;
+                mTitle.focus();
+                return;
+            }
+            if (assignee){
+                bad = findBadWord(assignee);
+                if (bad){
+                    mError.textContent = `El asignado contiene palabras no permitidas: "${bad}".`;
+                    mAssignee.focus();
+                    return;
+                }
+            }
+            if (comments){
+                bad = findBadWord(comments);
+                if (bad){
+                    mError.textContent = `Los comentarios contienen palabras no permitidas: "${bad}".`;
+                    mComments.focus();
+                    return;
+                }
             }
             if (startDate && endDate && startDate > endDate){
                 mError.textContent = 'La fecha mínima no puede ser mayor que la máxima.';
