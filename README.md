@@ -4,9 +4,13 @@ CollabSecure es una aplicación web sencilla enfocada en colaboración/seguridad
 
 ## integrantes
 Victor Mateo Alcócer López
+
 Jhesly Lisseth Castillo Martínez
+
 Diego Roberto Corrales Espinoza
+
 Jorge Adán Ortega Torres
+
 Dannia María Pérez Rivera
 
 
